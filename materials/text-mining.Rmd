@@ -1,0 +1,1127 @@
+---
+title: "Text Mining"
+author: "Philipp Heinrich, Andreas Blombach"
+date: "13.12.2022"
+output: 
+  html_document:
+    theme: readable
+    highlight: tango
+    toc: true
+    toc_float: true
+    collapsed: false
+    smooth_scroll: false
+    df_print: paged
+---
+
+```{r, message=FALSE, warning=FALSE}
+library(data.table)
+library(tidyverse)
+library(tidytext)
+library(NLP)
+library(openNLP) # benötigt Java JDK: https://www.oracle.com/java/technologies/downloads/
+library(corpustools)
+library(topicmodels)
+library(ggwordcloud)
+library(wordcloud)
+```
+
+
+## SMS Spam Collection
+We'll work with a small SMS corpus (publicly available at http://www.dt.fee.unicamp.br/~tiago/smsspamcollection/)
+containing 5,574 messages which have been labelled as either
+spam or legitimate (ham). Thus, it is an interesting data set
+for feature extraction and machine learning: How can we best
+predict whether a message is spam or not?
+
+(NB: Many ham messages come from Singapore. If a certain word
+confuses you (such as *la*, *mah* or *lor*), it's probably
+Singlish: https://en.wikipedia.org/wiki/Singlish_vocabulary)
+
+Before we can predict anything, however, we'll have to read in
+the data and learn how to handle text data in R.
+
+
+```{r, message=FALSE}
+smsspam <- fread(
+  "../data/smsspam.tsv", # path to file
+  quote = "", #
+  header = FALSE, # first row doesn't contain column names
+  col.names = c("y", "text"), # name the two columns,
+  encoding = "UTF-8" # specify encoding (some problems remain)
+)
+
+# this would also work:
+# test <- read_tsv(
+#   "data/smsspam.tsv",
+#   quote = "",
+#   col_names = c("y", "text")
+# )
+
+str(smsspam)
+```
+
+## Basic string manipulation
+Here, we'll take a look at common string functions, first in base
+R, then in the Tidyverse (which might be a little more intuitive,
+or, at the very least, a little more tidy).
+
+In order not to be overwhelmed by the output of many functions,
+we'll define two smaller objects to work with: `texts`, a
+character vector containing the first 10 texts from the SMS
+corpus, and `text`, the first of these texts.
+```{r}
+texts <- head(smsspam$text, 10)
+texts
+text <- texts[2]
+text
+```
+
+### Base R
+
+#### Number of characters (length)
+We've already used `nchar()` before. By default, this gives us the number of individual characters in a string (or character,
+but you can see why R's terminology might be confusing here). As
+the function is vectorised, it can also be used to get the lengths of all strings in a vector:
+```{r}
+nchar(text)
+nchar(texts)
+```
+
+Note that you can also the optional parameter `type` to get the
+number of bytes needed to store the string:
+```{r}
+"\u2640"
+nchar("\u2640", type = "bytes")
+```
+
+#### Substrings
+To get a substring (part of a string), you need to specify start
+and end position (remember that in R, you start counting at 1,
+not at 0):
+```{r}
+substr(text, start = 11, stop = 16)  # select
+```
+
+You can also assign a new value to a substring, thereby changing
+the original string:
+```{r}
+tmp <- text
+substr(tmp, start = 11, stop = 16) <- "Kidding"
+tmp
+```
+
+What happens if replacement length and value to replace are
+different?
+
+`substr()` also works on vectors:
+```{r}
+substr(texts, start = 1, stop = 10)
+```
+
+`strsplit()` can be used to, well, split strings at the position
+where a specified string (or regular expression) occurs.
+
+Note that this function always yields a list:
+```{r}
+strsplit(text, " ")  # split
+```
+
+You can use `unlist()` to simplify a list to a vector of all
+atomic elements contained in the list:
+```{r}
+strsplit(text, " ") %>% unlist()
+```
+
+The list output makes more sense when applying `strsplit()` to a
+vector:
+```{r}
+strsplit(texts[1:2], " ")
+```
+
+#### Concatenation and insertion
+To join strings (or vectors of strings), you can use `paste()`:
+```{r}
+paste("sms", text, sep = " : ")
+```
+
+```{r}
+paste("sms", texts, sep = " : ")
+```
+
+```{r}
+paste(head(smsspam$y, 10), ": ", texts, sep = "")
+```
+
+To insert values at specific places in a string, you can use a
+wrapper for the C function `sprintf()`. In the following example,
+`"%s: %s"` is a string wherein `%s` functions as a string
+placeholder to be replaced by the value(s) of the corresponding
+variable:
+```{r}
+sprintf("%s: %s", head(smsspam$y, 10), texts)
+```
+
+See the documentation (`?sprintf`) for details and other
+placeholders.
+
+
+#### Case
+Use `tolower()` and `toupper()` to convert a string to lower or
+to upper case, respectively.
+```{r}
+tolower(text)
+toupper(text)
+```
+
+#### Searching with regular expressions
+`grep()` returns a vector of the indices of strings in a vector
+that yielded a match for the given regular expression. Applying it to a single string is thus not very useful:
+```{r}
+grep("[[:digit:]]", texts[1])
+grep("[[:digit:]]", texts[3])
+grep("[[:digit:]]", texts)
+```
+
+To get the strings containing matches, you can either use the
+returned indices to subset the original vector or just set
+`value` to `TRUE`:
+```{r}
+# texts[grep("[[:digit:]]", texts)]
+grep("[[:digit:]]", texts, value = TRUE)
+```
+
+`grepl()` will return `TRUE` for each string in a vector that
+yielded a match:
+```{r}
+grepl("[[:digit:]]", texts)
+```
+
+As of R version 4.0, you can use raw strings. Although they are a little more awkward than in Python, this still makes it easier to escape special characters in more complicated regular expressions.
+
+A raw string has an `r` in front of the opening (single or double)
+quotation mark and round brackets inside the quotation marks:
+`r"(...)"` (where `...` stands for any character sequence).
+```{r}
+grepl("\\{", "this string contains {curly} brackets") # regular string needs double backslash to escape 
+grepl(r"(\{)", "this string contains {curly} brackets") # raw string only needs a single backslash to escape
+```
+
+#### Replacing with regular expressions
+```{r}
+gsub("[[:digit:]]", 0, texts[1])
+```
+
+```{r}
+gsub("[[:digit:]]", 0, texts[3])
+```
+
+```{r}
+gsub("[[:digit:]]", 0, texts)
+```
+
+### Tidyverse (stringr)
+The main advantage of functions from `stringr` is probably that
+they are easier to find since they all start with `str_`.
+
+`stringr` is built on top of `stringi`, a comprehensive package
+that contains many more string functions -- `stringr` focusses on
+the most common tasks.
+
+DataCamp offers a whole course on string manipulation with
+`stringr`: https://learn.datacamp.com/courses/string-manipulation-with-stringr-in-r
+
+#### String length
+```{r}
+str_length(text)
+str_length(texts)
+```
+
+One caveat: Unicode allows characters to be combined. For example,
+the umlaut *ü* can be thought of as a combination of *u* (U+0075)
+and a [diacritic](https://en.wikipedia.org/wiki/Diacritic)
+(U+0308):
+```{r}
+weird_umlaut <- "\u0075\u0308" # Apple users tend to produce these ...
+weird_umlaut # NB: will be displayed as two characters in HTML output
+```
+
+But there is also a single character which looks exactly the same:
+```{r}
+regular_umlaut <- "\u00fc"
+regular_umlaut
+```
+
+These two code sequences are called *canonically equivalent*. But
+although they look the same, they are not:
+
+```{r}
+regular_umlaut == weird_umlaut
+```
+
+This may also result in unexpected string lengths:
+```{r}
+umlauts <- c(regular_umlaut, weird_umlaut)
+str_length(umlauts) # same for nchar()
+str_count(umlauts) # what we'd expect
+```
+
+Luckily, there are different Unicode normalisation forms (see
+https://unicode.org/reports/tr15/) to handle canonical
+equivalence (and the weaker *compatibility equivalence* of
+characters which represent the same abstract character but are
+displayed differently, e.g. *²* and *2*).
+
+NFC is the normalisation form for canonical decomposition,
+followed by canonical composition: If a combination of Unicode
+characters can be represented by a single Unicode character that
+looks the same, that's the way to go.
+
+When dealing with text data from multiple sources (e.g. text
+scraped from different web pages), you may want to perform
+Unicode normalisation to ensure you don't run into problems later
+on.
+
+Check if strings are in NFC form:
+```{r}
+stringi::stri_trans_isnfc(umlauts)
+```
+
+NFC normalisation:
+```{r}
+umlauts <- stringi::stri_trans_nfc(umlauts)
+umlauts[1] == umlauts[2]
+```
+
+#### Substrings
+`str_sub()` works just as `substr()`, but you can also use
+negative values to count from the end of the string.
+```{r}
+str_sub(text, start = 1L, end = 16L)
+str_sub(text, start = -19L, end = -1L)
+```
+
+Replacement works *almost* the same way:
+```{r}
+tmp <- text
+str_sub(tmp, start = 11L, end = 16L) <- "Kidding"
+tmp
+```
+
+The difference is that the replacement string will always be
+inserted completely.
+
+Splitting strings with `str_split()` works mostly the same as
+with `strsplit()`. You just get a few additional options, like
+`simplify = TRUE` to return a matrix instead of a list.
+```{r}
+str_split(texts[1:2], " ")
+```
+
+#### Concatenation and insertion
+To join strings, use `str_c()`. The default value of `sep` is an
+empty string.
+```{r}
+str_c(head(smsspam$y, 3), ": ", texts[1:3])
+```
+
+You can "flatten" a vector of strings into a single string using
+`str_flatten()`:
+```{r}
+str_flatten(texts, "\n\n")
+```
+
+You can use `str_glue()` to insert variable values into strings:
+```{r}
+str_glue("{head(smsspam$y, 3)}: {texts[1:3]}")
+```
+
+Named arguments are also possible:
+```{r}
+str_glue("{label}: {text}",
+         label = head(smsspam$y, 3),
+         text = texts[1:3])
+```
+
+#### Case
+To convert a string to lower or upper case, use `str_to_lower()`
+or `str_to_upper()`. There are also functions for sentence and
+title case; see `?case`.
+
+#### Removing whitespace
+To remove whitespace from start and end of strings, use
+`str_trim()`. To also remove repeated whitespace inside of
+strings, use `str_squish()`.
+```{r}
+stupid_string <- " \t some  words\t\tand\n stuff   "
+str_trim(stupid_string)
+str_squish(stupid_string)
+```
+
+#### Searching with regular expressions
+`str_count()` offers a nice way to count the number of occurrences
+of a specific pattern in a string.
+
+How many vowels are there in `text`? (Linguistically naïve, but
+still ...)
+```{r}
+str_count(text, "[aeiouAEIOU]")
+```
+
+A very simple word count using a regular expression for
+alphanumericals (letters and digits):
+```{r}
+str_count(texts, "[[:alnum:]]+") # simple word count
+```
+
+`str_detect()` tells you if a string contains a given pattern:
+```{r}
+str_detect(texts, "^[fF]ree") # does the string start with "Free" or "free"?
+```
+
+This is often useful to filter data sets:
+```{r}
+smsspam %>% filter(str_detect(text, "[0-9]{5,}")) # texts containing at least 5 consecutive digits
+```
+
+`str_extract()` extracts the first matching string:
+```{r}
+str_extract(texts, "[[:alnum:]]+")
+```
+`str_extract_all()` extracts all matching strings (and therefore
+returns a list):
+```{r}
+str_extract_all(texts[1:3], "[[:alnum:]]+")
+```
+
+#### Replacing with regular expressions
+`str_replace()` does exactly what it promises, but only for the
+first matching occurrence:
+```{r}
+str_replace(text, "i", "I")
+```
+
+If you want to replace all occurrences of a given pattern, use
+`str_replace_all()` instead:
+```{r}
+str_replace_all(texts, "\\b[0-9]+\\b", "NUMBER")
+```
+
+Grouping and backreferences work, but we won't go that far now.
+
+
+
+## Packages: NLP & openNLP
+`openNLP` provides an interface to the Apache OpenNLP tools,
+a Java toolkit for typical NLP (natural language processing)
+tasks such as tokenisation, sentence segmentation, part-of-speech
+tagging, named entity extraction, chunking, parsing, language
+detection and coreference resolution (https://opennlp.apache.org).
+
+`NLP` has a special class for strings:
+```{r}
+txt <- as.String(texts)
+```
+
+This makes it possible to access substrings using square brackets:
+```{r}
+txt[1, 21]
+```
+
+### Language settings
+While English is available by default, you will need additional
+model files if you want to handle text in other languages.
+Pre-trained models are available here: 
+http://opennlp.sourceforge.net/models-1.5/
+
+You can conveniently install these from the repository at
+https://datacube.wu.ac.at. For example, if we wanted models for
+German, we'd do this:
+
+`install.packages("openNLPmodels.de", repos = "http://datacube.wu.ac.at/", type = "source")`
+
+Then, in a given `openNLP` function requiring a model, you'd set
+the parameter `language` to `"de"`. For example:
+
+`Maxent_Sent_Token_Annotator(language = "de")`
+
+In case there's more than one model available for a single
+component, such as the POS-Tagger, you can use the `model`
+parameter to specify which model you'd like to use:
+
+`Maxent_POS_Tag_Annotator(model = "path/to/Rlibrary/openNLPmodels.de/models/de-pos-perceptron.bin")`
+
+Note: Even if a model is available for a particular language and
+component, performance on your own data may be poor, e.g. because
+it differs greatly from the data on which the model was trained
+(usually specified in the model's description). In this case,
+check for better models elsewhere, train a model yourself or ask
+a computational linguist for help!
+
+### Sentence annotation
+This first step is needed to identify sentence boundaries.
+
+We will create an object using the `Maxent_Sent_Token_Annotator()`
+function which we will then use as an argument in the `annotate()`
+function (from `NLP`).
+```{r}
+sentence_annotator <- Maxent_Sent_Token_Annotator()
+
+sentence_annotation <- annotate(txt, sentence_annotator)
+sentence_annotation
+```
+If we check these boundaries, we can already see that it doesn't
+work well with our SMS data:
+```{r}
+txt[sentence_annotation]
+```
+
+Line breaks were introduced by converting a vector of `texts` to
+a `String` object (`txt`). However, the sentence detector doesn't
+properly recognise these as sentence boundaries. The same goes
+for the ellipis ("dot-dot-dot") in several messages.
+
+We probably need a better model for this (trained on SMS or CMC
+data), but if we aren't interested in punctuation marks later on,
+we could also replace parts of our input (generally, we wouldn't
+recommended this):
+
+```{r}
+txt <- texts[1:5] %>%
+  str_replace_all("\\.{2,}", "\\.") %>% # replace several dots by single dots
+  str_flatten(collapse = "</sms> ") %>% # combine SMS into single text
+  str_replace_all("([[:alnum:]])</sms>", "\\1.") %>% # replace SMS endings without punctuation marks with dots
+  str_remove_all("</sms>") %>% # clean up
+  as.String()
+sentence_annotation <- annotate(txt, sentence_annotator)
+txt[sentence_annotation]
+```
+This looks better.
+
+If we were to do sentence boundary detection on single SMS texts,
+we wouldn't have to care about the issue regarding line breaks.
+
+In general: If you notice errors in early annotation steps, think
+about *error propagation*. In an NLP pipeline (sentence boundary
+detection -> tokenisation -> PoS-tagging -> dependency parsing ->
+...), the accuracy of later steps depends upon the accuracy of
+earlier steps. If a text hasn't been properly tokenised, POS tags
+will often be rubbish. If PoS tags are wrong, or if sentence
+boundaries are wrong or missing, this will affect the resulting
+dependency trees -- and so on. Most importantly, however, it may
+eventually affect your actual analysis.
+
+Ultimately, it may be worthwhile to invest some time in improving
+"boring" or "solved" pre-processing and annotation steps.
+
+### Tokenisation
+We can now tokenise the text. This time, we pass an additional
+argument to `annotate()`: the annotations to start with, namely
+`sentence_annotation`.
+```{r}
+token_annotator <- Maxent_Word_Token_Annotator()
+token_annotation <- annotate(txt,
+                             token_annotator,
+                             sentence_annotation)
+token_annotation
+```
+Let's have a look at the actual tokens:
+```{r}
+txt[token_annotation[token_annotation$type == "word"]] %>% head(18)
+```
+
+### PoS-Tagging
+To add part-of-speech tags, we proceed in the same manner:
+```{r}
+pos_tagger <- Maxent_POS_Tag_Annotator()
+annotation <- annotate(txt, pos_tagger, token_annotation)
+annotation
+```
+
+We can now work with the annotated text – or first transform it
+to another format.
+```{r}
+tokens <- txt[annotation[annotation$type == "word"]]
+
+# annotation$features is a list of lists which makes it a little
+# difficult to handle:
+# annotation$features[annotation$type == "word"]
+
+# We can use unlist() to collapse list elements into a vector:
+pos_sequence <- as.character(unlist(
+  annotation$features[
+    annotation$type == "word"
+  ]
+))
+
+# We could also transform it to a data.frame:
+# annotation %>% as.data.frame() %>% filter(type == "word")
+
+# Or we could construct a tibble out of tokens and PoS tags
+# (although it would probably be nice to further add sentence and
+# text IDs:
+tibble(ID = 1:length(tokens), Token = tokens, POS = pos_sequence)
+```
+
+
+## Package: corpustools
+`corpustools` is a package designed to manage, query and analyse
+tokenised text. For advanced pre-processing (e.g. part-of-speech
+tagging or parsing), it relies on other packages, such as
+`spacyr`, `coreNLP` or `udpipe`.
+
+There's a package vignette that provides a nice overview:
+https://cran.r-project.org/web/packages/corpustools/vignettes/corpustools.html
+
+We'll first create a corpus from a data.frame. Because every
+document needs a unique ID, we'll have to add a new column to our
+SMS dataset:
+```{r}
+smsspam_df <- data.frame(smsspam) # copy
+smsspam_df$id <- sprintf("doc_%05d", 1:nrow(smsspam)) # new column
+corpus <- create_tcorpus(smsspam_df,
+                         doc_column = 'id',
+                         text_columns = 'text',
+                         split_sentences = TRUE,
+                         verbose = FALSE) # suppress progress bar
+corpus
+```
+
+Let's look at the tokens:
+```{r}
+head(corpus$tokens)
+```
+
+And the metadata:
+```{r}
+head(corpus$meta)
+```
+
+We can also import pre-processed tokens. We'll use the sample
+data `corenlp_tokens` to demonstrate this.
+```{r}
+head(corenlp_tokens)
+```
+
+```{r}
+tc = tokens_to_tcorpus(corenlp_tokens,
+                       doc_col = 'doc_id',
+                       sentence_col = 'sentence',
+                       token_id_col = 'id')
+tc
+```
+
+### Subsetting
+We can use `subset()` to filter our corpus (see `?subset.tCorpus`).
+
+Use the parameter `subset` to specify which rows to keep in the
+tokens data:
+```{r}
+sent347 <- subset(corpus, subset = sentence == 2)
+sent347
+```
+Use the parameter `subset_meta` to specify which documents to keep:
+```{r}
+doc50 <- subset(corpus, subset_meta = doc_id == "doc_00050")
+doc50$tokens
+```
+
+```{r}
+first_spam <- subset(corpus,
+                subset = token_id == 1,
+                subset_meta = y == "spam")
+first_spam$tokens %>% select(doc_id, token)
+```
+
+### Pre-processing
+An object of the class `tCorpus` (like our `corpus`) has quite a
+few class methods we can use (have a look at `str(corpus)`).
+
+Keep in mind that these class methods usually directly modify the
+corpus object. If you want to keep the original object, use
+`tCorpus$copy()` first:
+
+`corpus_old <- corpus$copy()`
+
+Arguably the most important class method is `tCorpus$preprocess()`
+which allows us to apply typical pre-processing steps to the
+whole corpus:
+```{r}
+corpus$preprocess(column = 'token',
+                  new_column = 'token2',
+                  lowercase = TRUE,
+                  remove_punctuation = FALSE,
+                  remove_stopwords = FALSE,
+                  remove_numbers = FALSE,
+                  use_stemming = FALSE,
+                  language = "english")
+corpus$tokens
+```
+
+
+### Deduplication
+We can remove identical or very similar documents from our corpus:
+```{r}
+nrow(corpus$meta)
+corpus$deduplicate(feature='token2',
+                   similarity = 0.95, # very similar documents
+                   print_duplicates = FALSE) # set to TRUE if you want the IDs of removed documents
+nrow(corpus$meta)
+```
+
+### Document feature matrix
+A document-term matrix is a matrix where each row represents
+a single document and each column represents a feature (e.g. a
+token). The values in the matrix represent the frequency of a
+given term in a given document.
+
+A document-term matrix can be used to tell us something about the
+content or style of a document. This information can then be used
+to retrieve relevant documents, to group similar documents by
+topic or to compare the style of different authors.
+
+Depending on the task at hand, the procedure will differ, but the
+basic principle remains the same.
+
+In many use cases, it makes sense to remove certain words (e.g.
+function words or very infrequent words) before constructing a
+document-term matrix. (On the other hand, sometimes function
+words can be *very* interesting, for example in stylometry. So
+think before thinning out your corpus!)
+```{r}
+corpus$preprocess(column = 'token',
+                  new_column = 'feature',
+                  remove_stopwords = TRUE,
+                  remove_numbers = TRUE,
+                  use_stemming = TRUE,
+                  min_docfreq = 5)
+
+dfm <- get_dfm(corpus, 'feature')
+dfm
+```
+
+You can see that most values in the matrix are zero. A matrix
+like this is called a *sparse matrix*. The percentage of
+zero-valued elements is often called *sparsity* -- our matrix
+here is 99.5% sparse, so only 0.5% of elements are non-zero.
+Specialised algorithms and data structures can take advantage of
+sparsity, while "regular" ones used on dense matrices can be slow
+and inefficient as they waste time and memory on all those zeros. 
+
+The raw frequencies seen above can also be weighted differently.
+The best procedure depends on what you want to do!
+
+A common approach is *term frequency--inverse document frequency*
+(*tf-idf*). *Term frequency* is what we've got so far: how often
+a token (or term) occurs in a document. (A number of adjustments
+is possible, e.g. for document length.)  
+*Document frequency*, on the other hand, is how many documents
+contain a certain token (term) -- regardless of how often it
+occurs within individual documents. *Inverse document frequency*
+is just the inverse (1 / df), so the smaller this value, the more
+common the token across documents. We usually take the natural
+logarithm of this quotient.  
+Finally, tf-idf is the product of term frequency and inverse
+document frequency. Idf therefore functions as a weight for the
+term frequency: the less common a token is across documents, the
+more important it is in a document in which it occurs. And vice
+versa, the more common a token generally is (think of words like
+*is*, *and*, *the*, *people* etc.), the less important it is in
+a single document, even if it occurs very frequently.
+
+```{r}
+dfm_weighted <- get_dfm(corpus, 'feature', weight = 'tfidf')
+dfm_weighted
+```
+
+When `tidytext` is loaded, you can use `tidy()` to convert a
+document-feature matrix to a tibble. This might make it easier
+to get a sense of the data.
+```{r}
+dfm_weighted %>% tidy() %>% arrange(desc(count))
+```
+
+This should probably tell us that more filtering before creating
+the dtm and/or better pre-processing and tokenisation might be a
+good idea. :)
+
+### Search the corpus
+```{r}
+query_result <- search_features(corpus,
+                                feature = "token",
+                                query = c('call', 'phone'))
+table(as.character(query_result$hits$feature))
+```
+
+### Visualise results
+```{r}
+queries <- data.frame(label = c('call', 'email', 'meet'),
+                      query = c('call* OR phone',
+                                'email OR e-mail',
+                                'meet* OR see*'))
+
+hits <- search_features(corpus,
+                        query = queries$query,
+                        code = queries$label)
+
+count_tcorpus(corpus, hits = hits)
+
+category_hits = count_tcorpus(corpus,
+                              hits,
+                              meta_cols = 'y',
+                              wide = FALSE)
+  
+ggplot(category_hits, aes(x = y, y = count, fill = code)) +
+  geom_col(position = "dodge") # geom_col() = geom_bar(stat = "identity")
+```
+
+### Display results
+If we're also interested to see results in context, we can use
+`browse_hits()` to create a static HTML page of our hits or
+`get_kwic()` to get a data.frame with a KWIC (keyword in context)
+column.
+```{r}
+url = browse_hits(corpus, hits, view = TRUE)
+get_kwic(corpus, query = "call*", n = 2)
+```
+
+## Package: tidytext
+`tidytext` is designed to work with tidy text data, meaning one
+token per row. Some of the structures we've seen above don't
+conform to this, so `tidytext` offers the `tidy()` function to
+tidy data from other packages and to convert tidy data into other
+formats expected by these packages.
+
+Create a tibble out of a `tCorpus` object:
+```{r}
+sms_tidy <- as_tibble(corpus$tokens) %>% 
+  inner_join(corpus$meta, by = 'doc_id') %>%
+  mutate(word = token2)
+sms_tidy
+```
+
+Looking at the `feature` column, we can see that the stemming we
+did earlier looks pretty horrible.
+
+### Counting words
+```{r}
+sms_tidy %>% count(word, sort = TRUE)
+```
+
+### Removing stop words
+Stop word lists are far from ideal, but sometimes, they are
+enough. `get_stopwords()` gives us a lexicon of words commonly
+excluded from further analysis. We can then do an `anti_join()`
+to remove them from our data.
+```{r}
+sms_clean <- sms_tidy %>% 
+  anti_join(tidytext::get_stopwords("en"))
+nrow(sms_clean) # number of rows now
+nrow(sms_tidy) # number of rows before
+sms_clean %>% count(word, sort = TRUE)
+```
+
+We've still got punctuation and very short words in there, so
+let's remove all that as well:
+```{r}
+sms_clean <- sms_clean %>% filter(str_length(word) > 2)
+sms_clean %>% count(word, sort = TRUE)
+```
+
+
+### Word clouds
+Let's give `wordcloud` a try this time.
+```{r}
+sms_clean %>% count(word) %>% with(wordcloud(word, n, max.words=50))
+```
+
+Of course, `ggwordcloud` works just as well -- and allows us to
+group the words by classification (spam or not).
+```{r, warning=FALSE, fig.width=10}
+set.seed(1)
+sms_clean %>%
+  group_by(y) %>%
+  count(word) %>%
+  arrange(y, desc(n)) %>%
+  summarise(head(across(), 100)) %>%
+  ungroup() %>%
+  mutate(angle = 90 * sample(c(0, 1), n(),
+                             replace = TRUE, prob = c(60, 40))) %>%
+  ggplot(aes(label = word, size = n,
+             colour = y, x = y,
+             angle = angle)) +
+  geom_text_wordcloud(area_corr = TRUE) +
+  scale_size_area(max_size = 12) +
+  labs(title = "Most frequent words", x = "Classification") +
+  theme_minimal() +
+  theme(panel.grid.major = element_blank())
+```
+
+### Document-feature matrix
+Instead of using the document-term matrix from above, we can also
+easily create a new one without using the `corpustools` package.
+
+```{r}
+tidy_dtm <- sms_clean %>% group_by(doc_id, word) %>%
+  summarise(count = n()) %>%
+  ungroup() %>%
+  arrange(doc_id, word)
+
+rare_terms <- sms_clean %>%
+  count(word) %>%
+  filter(n < 4) %>%
+  arrange(desc(n))
+
+tidy_dtm <- tidy_dtm %>%
+  anti_join(rare_terms) # remove rare terms
+
+tidy_dtm
+```
+
+To get a proper matrix, we can convert a tibble like this using
+`cast_dfm()`, specifying which columns in our data contain
+document identifiers, terms and frequencies.
+```{r}
+tidy_dtm %>%
+  mutate(word = as.character(word)) %>% # next function doesn't like factors
+  cast_dfm(doc_id, word, count)
+```
+
+We can also use `cast_dtm()` to get a document-feature matrix in
+the `DocumentTermMatrix` format from the `tm` (text mining)
+package.
+```{r}
+tidy_dtm %>%
+  mutate(word = as.character(word)) %>% # next function doesn't like factors
+  cast_dtm(doc_id, word, count)
+```
+
+Both functions have the optional parameter `weighting` [...]
+
+For tf-idf, there's also the function `bind_tf_idf()` which can
+be applied to a tidy tibble with one row per token (or term), per
+document (such as `tidy_dtm`):
+```{r}
+tidy_dtm %>% bind_tf_idf(word, doc_id, count)
+```
+
+
+### Topic modelling
+Topic modelling uses Latent Dirichlet Allocation (LDA) to extract
+a number of topics from a collection of texts.
+
+The required input for `LDA()` is a document-term matrix in the
+`DocumentTermMatrix` format from the `tm` (text mining) package.
+
+```{r}
+sms_lda <- tidy_dtm %>%
+  mutate(word = as.character(word)) %>% # next function doesn't like factors
+  cast_dtm(doc_id, word, count)  %>%
+  LDA(k = 4)
+topics <- tidy(sms_lda, matrix = "beta")
+topics
+```
+
+Let's see what the top 20 terms for each topic are:
+```{r, fig.width=10}
+top_terms <- topics %>%
+  group_by(topic) %>%
+  slice_max(beta, n = 20) %>%
+  ungroup() %>%
+  arrange(topic, -beta)
+
+top_terms %>%
+  mutate(term = reorder_within(term, beta, topic)) %>%
+  ggplot(aes(beta, term, fill = factor(topic))) +
+  geom_col(show.legend = FALSE) +
+  facet_wrap(~ topic, scales = "free", ncol = 4) +
+  scale_y_reordered()
+```
+Honestly, we can't make much sense of this. We could filter more
+to get a better input for the LDA, but it may also be that topic
+modelling just doesn't work well for such short messages.
+
+We'll give it another try with our CMC data from Twitter and
+Reddit. Since we've got part-of-speech tags in this case, we'll
+only keep certain content words for our analysis -- no need for
+stop word lists!
+
+```{r}
+cmc <- read_csv2("../data/cmc-sample.csv")
+
+cmc$textid <- str_extract(cmc$token, "(?<=<text_id )[[:alnum:]]+")
+cmc <- cmc %>% fill(textid, .direction = "downup")
+
+# new column: year/month
+cmc$year_month <- str_extract(cmc$token, "(?<=<text_ym )[0-9]+")
+cmc <- cmc %>% fill(year_month, .direction = "downup")
+
+# new column: sentence id
+cmc <- cmc %>% mutate(sid = cumsum(str_detect(token, "<s>")))
+
+# no more XML tags
+cmc <- cmc %>% filter(!is.na(pos))
+
+# new column: extract year from year_month
+cmc$year <- str_extract(cmc$year_month, "[0-9]{4}")
+
+# replace HTML entities
+cmc <- cmc %>% mutate(token = str_replace(token, "&apos;", "'"),
+                      token = str_replace(token, "&quot;", '"'),
+                      token = str_replace(token, "&amp;", "&"),
+                      token = str_replace(token, "&lt;", "<"),
+                      token = str_replace(token, "&gt;", ">"),
+                      token = str_replace(token, "&#039;", "'"),
+                      token = str_replace(token, "&#x25;", "%"))
+
+tags <- c("ADJD", "ADJA", "NN", "NE", "TRUNC", "HST") # c("ADJD", "ADJA", "NN", "NE", "TRUNC", "VVFIN", "VVIMP", "VVINF", "VVIZU", "VVPP", "HST")
+
+cmc_content <- cmc %>%
+  filter(pos %in% tags,
+         str_length(lemma) > 1) %>%
+  select(source, textid, sid, tid = id, token, lemma = lemma_ab,
+         pos, year_month, year)
+cmc_content
+```
+
+```{r}
+cmc_dtm <- cmc_content %>%
+  group_by(textid) %>%
+  count(lemma) %>%
+  ungroup() %>%
+  arrange(textid, lemma)
+
+cmc_rare_terms <- cmc_content %>%
+  count(lemma) %>%
+  filter(n < 4) %>%
+  arrange(desc(n))
+
+cmc_dtm <- cmc_dtm %>%
+  anti_join(cmc_rare_terms, by = "lemma")
+
+cmc_dtm <- cmc_dtm %>% bind_tf_idf(lemma, textid, n)
+
+cmc_dtm <- cmc_dtm %>% filter(tf < .5, tf_idf >= .3)
+
+cmc_dtm
+```
+
+```{r, fig.height=10, fig.width=12}
+cmc_lda <- cmc_dtm %>%
+  cast_dtm(textid, lemma, n)  %>%
+  LDA(k = 12, control = list(nstart = 50)) # 50 repeated runs with random initialisations
+  # LDA(k = 12, method = "Gibbs", control = list(seed = 42, # setting a seed makes the result reproducible
+  #                                             iter = 3000,
+  #                                             thin = 10,
+  #                                             burnin = 1000)) 
+
+topics <- tidy(cmc_lda, matrix = "beta")
+topics
+
+top_terms <- topics %>%
+  group_by(topic) %>%
+  slice_max(beta, n = 20) %>%
+  ungroup() %>%
+  arrange(topic, -beta)
+
+top_terms %>%
+  mutate(term = reorder_within(term, beta, topic)) %>%
+  ggplot(aes(beta, term, fill = factor(topic))) +
+  geom_col(show.legend = FALSE) +
+  facet_wrap(~ topic, scales = "free") +
+  scale_y_reordered() +
+  labs(x = expression(beta), y = "Lemma")
+```
+In contrast to the topics from the SMS corpus, these topics are
+at least interpretable and partly coincide with our own
+observations (e.g. Brexit being a popular topic).
+
+However, the topics are relatively unstable, so that you often
+get somewhat different topics in different runs. A higher value
+of `nstart` (for more repeated runs) may increase the topic
+stability, but will also greatly increase the execution time.
+
+Topic modelling also works much better for collections of longer
+documents.
+
+
+
+Which lemmas in individual documents are assigned to which topics?
+```{r}
+augment(cmc_lda, cmc_dtm %>% rename(document = textid, term = lemma)) %>%
+  select(document, term, .topic, everything())
+```
+
+We can also look at the estimated proportions of terms from each
+document belonging to each topic:
+```{r}
+cmc_gamma <- tidy(cmc_lda, matrix = "gamma") %>%
+  arrange(document, desc(gamma))
+cmc_gamma
+```
+
+Are there differences between Reddit and Twitter regarding the
+estimated proportions?
+```{r}
+document_source <- cmc %>%
+  select(textid, source, year) %>%
+  rename(document = textid) %>%
+  distinct()
+cmc_gamma <- cmc_gamma %>%
+  left_join(document_source)
+
+cmc_gamma %>%
+  ggplot(aes(x = factor(topic), y = gamma, colour = source)) +
+  geom_boxplot(outlier.alpha = .1) +
+  labs(x = "Topic", y = expression(gamma), colour = "Source")
+```
+
+
+
+### Sentiment analysis
+Sentiment analysis, or opinion mining, in its simplest form is
+used to assess whether a text (or a section of a text) is
+positive or negative (e.g. product reviews). More sophisticated
+forms of sentiment analysis are used to assess a wider range of
+emotional content (surprise, anger, love, disgust, ...).
+
+An easy (but crude) approach to sentiment analysis would be to
+use a sentiment lexicon which assigns sentiment labels to
+specific tokens (e.g. *idiotic* => negative sentiment).
+```{r}
+sentiment_scores <- tidytext::get_sentiments(lexicon = "bing")
+positive <- sentiment_scores %>% filter(sentiment == "positive")
+negative <- sentiment_scores %>% filter(sentiment == "negative")
+
+sms_tidy %>% 
+  filter(y == "ham") %>%
+  semi_join(positive) %>%
+  count(word, sort = TRUE)
+```
+
+```{r}
+sms_tidy %>% 
+  filter(y == "spam") %>%
+  semi_join(positive) %>%
+  count(word, sort = TRUE)
+```
+
+```{r}
+sms_tidy %>%
+  inner_join(sentiment_scores) %>%
+  ggplot(aes(x = y, fill = sentiment)) +
+  geom_bar(position = "dodge")
+```
+
+
+
+## Further reading and exercises
+- DataCamp course which covers document term matrices, TF-IDF,
+  topic modelling and more:
+  https://campus.datacamp.com/courses/introduction-to-natural-language-processing-in-r
+- Arnold/Tilton (2015) has a chapter on NLP in R and a chapter on
+  text analysis which demonstrate some DH applications.
+- https://www.tidytextmining.com also covers stuff like TF-IDF
+  and topic models in more detail.
+
+
+
