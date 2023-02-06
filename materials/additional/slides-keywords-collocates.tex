@@ -1,0 +1,355 @@
+% \documentclass[handout,t]{beamer} % HANDOUT
+% \documentclass[handout,notes=show,t]{beamer} % NOTES
+\documentclass[aspectratio=1610,t]{beamer} % SLIDES
+\usetheme{ccl}
+
+\usepackage[utf8]{inputenc}
+\usepackage[ngerman]{babel}
+\usepackage{hyperref}
+\usepackage{bibentry}
+\usepackage{pifont}
+\usepackage{array,hhline,booktabs}   % modern tabular displays
+\usepackage{marvosym}
+\usepackage{kotex}
+\usepackage{nicefrac}
+
+
+%----------------------------------%
+% Abkürzende mathematische Befehle %
+%----------------------------------%
+\newcommand{\R}{\mathbb{R}}			% reelle Zahlen
+\newcommand{\A}{\mathcal{A}}                    % Ereignisraum
+\newcommand{\Cov}{\operatorname{Cov}}		% Kovarianz
+\newcommand{\Var}{\operatorname{Var}}		% Varianz
+\newcommand{\Prob}{\mathbb{P}}			% Wahrscheinlichkeitsmaß
+\newcommand{\WRaum}{(\Omega,\A,\Prob)}		% Wahrscheinlichkeitsraum
+\newcommand{\ind}{\mathbbmss{1}} 		% Indikator-Eins
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% Titlepage
+
+\title{\textbf{Keywords und Kollokate}}
+\subtitle{Wörter, Texte \& Frequenzen\\Wintersemester 2021/22}
+\author[Blombach \& Heinrich]{Andreas Blombach \& Philipp Heinrich}
+\institute[]{%\url{philipp.heinrich@fau.de}
+  Lehrstuhl für Korpus- und Computerlinguistik\\
+  Friedrich-Alexander-Universität Erlangen-Nürnberg\\
+  % {\secondary{\url{philipp.heinrich@fau.de}}}}
+  }
+\date[24.01.2022]{Erlangen, 24.01.2022}
+\setbeamertemplate{navigation symbols}{} %remove navigation symbols
+
+\begin{document}
+\frame{\titlepage}
+\hideLogo
+
+\section{Keywords}
+
+\begin{frame}
+  \frametitle{Keywords}
+  \begin{itemize}
+  \item \emph{Keywords} sind Wörter, die in einem gegebenen Korpus überdurchschnittlich oft vorkommen -- im Vgl. zur Häufigkeit in einem \emph{Referenzkorpus}
+  \item[]
+  \item \emph{Assoziationsmaße} quantifizieren den Vergleich mittels einer einzelnen reellen Zahl, basierend auf Intuition und/oder statistischen Verfahren
+  \item[]
+  \item \emph{Keyness} ist ein textuelles, kein sprachliches Feature
+    \begin{itemize}
+    \item gesprochene Sprache vs. geschriebene Sprache
+    \item soziale Medien vs. Zeitungen
+    \item Hochliteratur vs. Groschenromane
+    \item links-liberale Zeitungen vs. rechts-konservative Zeitungen
+    \item Grüne vs. AfD
+    \item \ldots
+    \end{itemize}
+  \item[]
+  \item Anwendung bspw. in der \emph{Diskursanalyse}, \emph{Indexerstellung}, \ldots
+  \end{itemize}
+\end{frame}
+
+\begin{frame}[c]
+  \frametitle{Keywords in CQPweb}
+  \centering
+  \includegraphics[width=0.7\textwidth]{../img/keywords_cqpweb}
+\end{frame}
+
+\section{Kollokate}
+\begin{frame}
+  \frametitle{Kollokate}
+  \begin{itemize}
+  \item \emph{Kollokate} eines Wortes (dem \emph{Knoten}, oder engl. \emph{node}) sind Wörter, die häufig in dessen Umgebung auftreten (Ko-Okkurrenz)
+  \item[]
+  \item Einblick in die Semantik des Wortes, vgl. Firth's (1957) \emph{distributional hypothesis}:
+    \begin{center}
+      \emph{You shall know a word by the company it keeps!}
+    \end{center}
+  \item[]
+  \item hier: Kollokation als Phänomen, das in Korpora empirisch beobachtbar ist
+    \begin{itemize}
+    \item Kollokate von \glqq Atomkraft\grqq\ im GermaParl
+    \item Kollokate von \glqq Impfung\grqq\ auf Twitter
+    \end{itemize}
+  \item[]
+  \item Anwendung bspw. in der \emph{Diskursanalyse}, \emph{Lexikographie}, \ldots
+  \item[]
+  \item Kollokate $\neq$ Mehrworteinheiten, Idiome, Phraseologismen, \ldots
+  \end{itemize}
+\end{frame}
+
+
+
+\begin{frame}
+  \frametitle{Kollokate von \emph{bucket} (noun)}
+  \vspace{-.5cm}
+  \begin{center}
+    \begin{scriptsize}
+      \begin{tabular}{>{\itshape}lr}
+        \toprule
+        \textbf{noun} & $f$ \\
+        \midrule
+      water & 183 \\
+      spade &  31 \\
+    plastic &  36 \\
+       slop &  14 \\
+       size &  41 \\
+        mop &  16 \\
+     record &  38 \\
+     bucket &  18 \\
+        ice &  22 \\
+       seat &  20 \\
+       coal &  16 \\
+    density &  11 \\
+    brigade &  10 \\
+  algorithm &   9 \\
+     shovel &   7 \\
+  container &  10 \\
+       oats &   7 \\
+       sand &  12 \\
+      Rhino &   7 \\
+  champagne &  10 \\
+        \bottomrule
+      \end{tabular}
+      \hspace{5mm}
+      \begin{tabular}{>{\itshape}lr}
+        \toprule
+        \textbf{verb} & $f$ \\
+        \midrule
+      throw & 36 \\
+       fill & 29 \\
+  randomize &  9 \\
+      empty & 14 \\
+        tip & 10 \\
+       kick & 12 \\
+       hold & 31 \\
+      carry & 26 \\
+        put & 36 \\
+      chuck &  7 \\
+       weep &  7 \\
+       pour &  9 \\
+      douse &  4 \\
+      fetch &  7 \\
+      store &  7 \\
+       drop &  9 \\
+       pick & 11 \\
+        use & 31 \\
+       tire &  3 \\
+      rinse &  3 \\
+        \bottomrule
+      \end{tabular}
+      \hspace{5mm}
+      \begin{tabular}{>{\itshape}lr}
+        \toprule
+        \textbf{adjective} & $f$ \\
+        \midrule
+          large & 37 \\
+  single-record &  5 \\
+           cold & 13 \\
+     galvanized &  4 \\
+     ten-record &  3 \\
+           full & 20 \\
+          empty &  9 \\
+       steaming &  4 \\
+     full-track &  2 \\
+   multi-record &  2 \\
+          small & 21 \\
+          leaky &  3 \\
+     bottomless &  3 \\
+     galvanised &  3 \\
+           iced &  3 \\
+          clean &  7 \\
+         wooden &  6 \\
+            old & 19 \\
+       ice-cold &  2 \\
+     anti-sweat &  1 \\
+        \bottomrule
+      \end{tabular}
+    \end{scriptsize}
+  \end{center}
+\end{frame}
+
+\begin{frame}[c]
+  \frametitle{fensterbasierte Kollokate in CQPweb}
+  \begin{center}
+    \includegraphics[width=\textwidth]{../img/collocations_cqpweb-2}
+  \end{center}
+\end{frame}
+
+\subsection{Kookkurrenzarten}
+\begin{frame}
+  \frametitle{textuelle Kookkurrenz}
+  \framesubtitle{textual cooccurrence / segment-based cooccurrence}
+  \begin{center}
+    Text = Artikel, Paragraph, Tweet, Post, Satz, \ldots
+
+    \vspace{.5cm}
+    \colorbox{blue!20!white}{%
+      \includegraphics[width=.8\textwidth]{../img/cooc_sentence}}
+  \end{center}
+\end{frame}
+
+\begin{frame}[c]
+  \frametitle{textuelle Kookkurrenz (Satzfenster)}
+
+  \centering
+  \includegraphics[width=\textwidth]{../img/cont_table_sentence}
+
+\end{frame}
+
+\begin{frame}
+  \frametitle{Oberflächenkookkurrenz}
+  \framesubtitle{surface cooccurrence / distance-based cooccurrence}
+  \begin{center}
+    fensterbasiert, abgeschnitten an entsprechenden Grenzen
+
+    \vspace{.5cm}
+    \colorbox{blue!20!white}{%
+      \includegraphics[width=\textwidth]{../img/cooc_distance}}
+  \end{center}
+\end{frame}
+
+\begin{frame}[c]
+  \frametitle{Oberflächenkookkurrenz (L4, R4)}
+
+  \centering
+  \includegraphics[width=\textwidth]{../img/cont_table_distance}
+
+\end{frame}
+
+\begin{frame}
+  \frametitle{syntaktische Kookkurrenz}
+  \framesubtitle{syntactic cooccurrence / relational cooccurrence}
+  \begin{center}
+    Ausnutzung syntaktischer Strukturen
+
+    \vspace{.5cm}
+    \colorbox{blue!20!white}{%
+      \includegraphics[width=\textwidth]{../img/cooc_syntactic}}
+  \end{center}
+\end{frame}
+
+\begin{frame}[c]
+  \frametitle{syntaktische Kookkurrenz}
+
+  \centering
+  \includegraphics[width=\textwidth]{../img/cont_table_syntactic}
+
+\end{frame}
+
+\section{Assoziationsmaße}
+
+\begin{frame}
+  \frametitle{Kontingenz und Indifferenz}
+  \begin{itemize}
+  \item Kontingenztabelle (beobachtete Häufigkeiten):
+    \bgroup
+    \def\arraystretch{1.5}
+    \[
+      \begin{array}{c|c|c|c}
+        & \text{word} & \text{other words} & \\
+        \hline
+        \text{corpus}_1 & O:=O_{11} & O_{12} &= R_1\\
+        \text{corpus}_2 & O_{21} & O_{22} & = R_2\\
+        \hline
+        & =C_1 & =C_2 & =N
+      \end{array}
+    \]
+    \egroup
+  \item[]
+  \item Indifferenztabelle (erwartete Häufigkeiten \emph{bei Unabhängigkeit}):
+  \bgroup
+    \def\arraystretch{1.5}
+    \begin{center}
+      \begin{tabular}{c|c|c|c}
+        & \text{word} & \text{other words} & \\
+        \hline
+        $\text{corpus}_1$ & $E:=E_{11}=\frac{R_1C_1}{N}$ & $E_{12}=\frac{R_1C_2}{N}$ & $=R_1$\\
+        $\text{corpus}_2$ & $E_{21}=\frac{R_2C_1}{N}$ & $E_{22}=\frac{R_2C_2}{N}$ & $=R_2$\\
+        \hline
+        & $=C_1$ & $=C_2$ & $=N$
+      \end{tabular}
+    \end{center}
+    \egroup
+  \end{itemize}
+\end{frame}
+
+\begin{frame}
+  \frametitle{Assoziationsmaße}
+  Quantifikation der Abweichung:
+  \def\arraystretch{1.5}
+    \[
+      \begin{array}{r|c|c|c}
+        & \text{word} & \text{other words} &\\
+        \hline
+        \text{corpus}_1 & O \text{ vs. }E& O_{12} \text{ vs. }E_{12} &=R_1\\
+        \text{corpus}_2 & O_{21} \text{ vs. }E_{21} & O_{22} \text{ vs. }E_{22} &=R_2\\
+        \hline
+        & =C_1 & =C_2 &=N
+      \end{array}
+    \]
+
+  \bigskip
+  \begin{columns}
+    \begin{column}{0.4\textwidth}
+      \begin{itemize}
+      \item $\text{log-ratio}=\log\frac{\nicefrac{O_{11}}{R_1}}{\nicefrac{O_{21}}{R_2}}$
+      \item $\text{MI} = \log_2\nicefrac{O}{E}$
+      \item $\text{t-score} = \frac{O - E}{\sqrt{O}}$
+      \end{itemize}
+    \end{column}
+    \begin{column}{0.6\textwidth}
+      \begin{itemize}
+      \item $LL = 2\sum_{ij} O_{ij}\log\frac{O_{ij}}{E_{ij}}$
+      \item $\chi^2 = \sum_{ij} \frac{(O_{ij} - E_{ij})^2}{E_{ij}}$
+      \item \ldots
+      \end{itemize}
+    \end{column}
+  \end{columns}
+\end{frame}
+
+\section{Software}
+\begin{frame}
+  \frametitle{Software}
+  \begin{itemize}
+  \item Berechnung der Assoziationsmaße unkompliziert
+    \begin{itemize}
+    \item \texttt{R}: einfache Datensatzmanipulation
+    \item Python: \href{https://pypi.org/project/association-measures/}{association-measures}
+    \item CLI (Perl): \href{http://www.collocations.de/software.html}{UCS toolkit}
+    \end{itemize}
+  \item[]
+  \item korrektes und effizientes Zählen am besten nach Korpusindexierung in CWB
+    \begin{itemize}
+    \item \texttt{R}: \href{https://cran.r-project.org/web/packages/polmineR/index.html}{PolmineR}
+    \item Python: \href{https://pypi.org/project/cwb-ccc/}{cwb-ccc}
+    \item GUI (PHP): \href{https://cwb.sourceforge.io/cqpweb.php}{CQPweb}
+    \end{itemize}
+  \end{itemize}
+\end{frame}
+
+
+\end{document}
+%%% Local Variables:
+%%% mode: latex
+%%% TeX-master: t
+%%% End:

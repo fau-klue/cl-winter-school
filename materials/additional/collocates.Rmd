@@ -1,0 +1,262 @@
+---
+title: "Kollokate"
+author: "Andreas Blombach, Philipp Heinrich"
+date: "January 31, 2023"
+output: 
+  html_document:
+    theme: readable
+    highlight: tango
+    toc: true
+    toc_float: true
+    collapsed: false
+    fig_width: 10
+    df_print: paged
+    code_folding: hide
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_chunk$set(class.source = 'fold-show')
+```
+
+# Ko-okkurrenz und Kontingenz
+
+## Notation
+
+Traditionalle Kollokationsanalysen basieren auf den Kookkurrenzhäufigkeiten von Wort**paaren**; diese werden mithilfe von quantitativen Maßen (siehe unten) gemäß ihrer **statistischen Assoziation** angeordnet.  Für jedes mögliche Wortpaar $(w_1, w_2)$ werden dazu die relevanten Kookkurrenz-Häufigkeiten in einer Kontingenztabelle festgehalten:
+
+$$
+\begin{array}{c|c|c|c}
+& w_2 & \neg w_2 & \\
+\hline
+w_1 & O_{11} & O_{12} &= R_1\\
+\hline
+\neg w_1 & O_{21} & O_{22} & = R_2\\
+\hline
+& =C_1 & =C_2 & =N
+\end{array}
+$$
+
+$O_{11} =: O$ ist die **Kookkurrenzhäufigkeit** der beiden Wörter, $R_1 = O_{11} + O_{12}$ ist die **marginale Häufigkeit** von $w_1$ und $C_1 = O_{11} + O_{21}$ die marginale Häufigkeit von $w_2$.  Die **Stichprobengröße** $N$ erhält man durch Aufsummieren aller Einträge der Kontingenztabelle.
+
+Statistische **Assoziationsmaße** (AMs) vergleichen nun die beobachteten Häufigkeiten $O_{ij}$ in der Kontingenztabelle mit den **erwarteten Häufigkeiten** $E_{ij}$ unter der Nullhypothese "keine Assoziation zwischen $w_1$ und $w_2$". Die Nullhypothese nimmt **Unabhängigkeit** der Vorkommen der beiden Wörter an. Die Tabelle der erwarteten Häufigkeiten unter Gültigkeit der Nullhypothese nennt man auch **Indifferenztabelle**. Man kann sich $E_{ij}$ intuitiv als eine Kontingenztabelle vorstellen, die man von einem "zufälligen" Korpus zu erwarten hätte; die erwarteten Häufigkeiten können hierbei aus den Randhäufigkeiten (Marginalen) der Kontingenztabelle berechnet werden:
+$$
+\begin{array}{c|c|c|}
+& w_2 & \neg w_2 \\
+\hline
+w_1 & E_{11}=\dfrac{R_1C_1}{N} & E_{12}=\dfrac{R_1C_2}{N} \\
+\hline
+\neg w_1 & E_{21}=\dfrac{R_2C_1}{N} & E_{22}=\dfrac{R_2C_2}{N} \\
+\hline
+\end{array}
+$$
+Der wichtigste Eintrag ist natürlich $E_{11}=:E$, also der Eintrag oben links, welcher die **erwartete Kookkurrenzhäufigkeit** von $w_1$ und $w_2$ angibt.
+
+NB: Das Wort **Kontingenz** bezeichnet in der Statistik den Zusammenhang von nominalen Variablen.
+
+## Kontingenztabellen in R
+
+Auf folgende Weise können wir Kontingenztabellen (($2\times 2$)-Matrizen) in R erstellen (fiktiver Datensatz):
+```{r}
+A <- matrix(c(10,47,82,956), nrow=2, ncol=2, byrow=TRUE)
+# alternativ:
+A <- rbind(c(10,47), c(82,956))
+```
+
+Für Kollokationsanalysen berechnet man typischerweise AMs für eine große Anzahl an Wortpaaren. Das kann bspw. so aussehen:
+
+```{r}
+# load and attach data set
+library(corpora)
+# ?BrownBigrams
+attach(BrownBigrams)
+result <- numeric(nrow(BrownBigrams))
+
+# chisq as AM
+# for (i in 1:nrow(Brown)) {
+#     if ((i %% 100) == 0) cat(i, " bigrams done\n")
+#     A <- rbind(c(O11[i],O12[i]), c(O21[i],O22[i]))
+#     result[i] <- chisq.test(A)$statistic
+#   }
+
+# Fisher's exact test
+# for (i in 1:nrow(Brown)) {
+#     if ((i %% 100) == 0) cat(i, " bigrams done\n")
+#     A <- rbind(c(O11[i],O12[i]), c(O21[i],O22[i]))
+#     result[i] <- fisher.test(A)$p.value
+#   }
+
+# detach data set
+detach()
+```
+
+Für Details zu den AMs siehe unten. Was hier allerdings bereits klarwerden sollte: Solche Berechnungen sind extrem ineffizient! Es ist daher nicht sinnvoll, jede Kontingenztabelle als eine separate ($2\times 2$)-Matrix darzustellen und als Eingabe für Funktionen zu verwenden, die Assoziationsmaße berechnen. Stattdessen fasst man alle Kontingenztabellen in einer einzelnen großen Tabelle (d.h. für R: einem `data.frame`) zusammen. Jede Zeile gibt dabei alle notwendigen Informationen eines Wortpaares wieder (entspricht also einer kompletten Kontingenztabelle). In diesem Zusammenhang spricht man auch von der _Frequenzspur_ eines Wortes.
+
+Eine exakte Berechnung der Werte von Kontingenztabellen kann sehr schwierig sein (zumindest wenn man Evert (2004, 2008) Glauben schenkt oder es einmal selbst versucht hat). Es mag daher sinnvoll sein, spezialisierte Software (wie bspw. das [UCS toolkit](http://www.collocations.de/software.html) oder das Python-Modul [cwb-ccc](https://pypi.org/project/cwb-ccc/)) zu verwenden und allein das Ergebnis in R zu importieren.
+
+Wir betrachten zu Übungszwecken hier Kookkurrenzhäufigkeiten für Bigramme (benachbarte Wörter) im Brown-Korpus:
+
+```{r}
+library(corpora)
+head(BrownBigrams)
+```
+
+> **Q:** Was sind die marginalen Häufigkeiten von _learn_ und _about_? Spezifizieren Sie die volle Kontingenztabelle für dieses Wortpaar in einer $(2\times2)$-Matrix.
+
+## Erwartete Häufigkeiten
+
+Als erstes berechnen wir die Indifferenztabelle für jedes Wortpaar. Wir fangen hier zu Übungszwecken mit einer kleinen Teilmenge an:
+
+```{r}
+BB <- subset(BrownBigrams, word1 == "learn")
+knitr::kable(BB)
+```
+
+Die erwarteten Häufigkeiten können -- wie in obiger Tabelle beschrieben -- mittels der Marginale berechnet werden. Wir fügen in einem ersten Schritt die Randhäufigkeiten der Kontingenztabelle mit Hilfe von `transform()` der Tabelle hinzu:
+
+```{r}
+BB <- transform(BB, 
+                R1 = O11 + O12, 
+                R2 = O21 + O22,
+                C1 = O11 + O21, 
+                C2 = O12 + O22,
+                N = O11 + O12 + O21 + O22)
+knitr::kable(BB)
+```
+
+In einem zweiten Schritt berechnen wir nun die erwarteten Häufigkeiten:
+```{r}
+BB <- transform(BB,
+                E11 = R1 * C1 / N,
+                E12 = R1 * C2 / N,
+                E21 = R2 * C1 / N, 
+                E22 = R2 * C2 / N)
+knitr::kable(BB[, c(2:9, 15:18)], digits=2)
+```
+
+> **Q:** Was sagt Ihnen ein Vergleich von `O11` mit `E11` bzgl. der Kollokabilität dieser 5 Bigramme?
+
+# Assoziationsmaße
+
+## Einfache Assoziationsmaße
+
+Einfache Assoziationsmaße basieren auf einem direkten Vergleich von $O := O_{11}$ mit $E := E_{11}$.  Die anderen je drei Einträge der Kontingenz- und Indifferenztabelle werden dabei ignoriert. Ein außerordentlich einfaches und intuitiv verständliches AM ist das Verhältnis von beobachteter und erwarteter Häufigkeit. Der Logarithmus dieses Verhältnisses entspricht gerade dem informationstheoretischen Konzept der **punktweisen Transinformation** (engl. _pointwise mutual information_): 
+$$
+\text{MI} = \log_2 \frac{O}{E}
+$$
+
+Sehr beliebt vor allem unter Lexikographen ist der **t-score**:
+$$
+\text{t-score} = \frac{O - E}{\sqrt{O}}
+$$
+
+Wir fügen diese beiden Maße unserer Tabelle hinzu:
+
+```{r}
+BB <- transform(BB, 
+                MI = log2(O11 / E11), 
+                t.score = (O11 - E11) / sqrt(O11))
+knitr::kable(BB[, c(2:6, 15, 19:20)], digits=2)
+```
+
+> **Q:** Schlagen Sie weitere einfache [Assoziationsmaße](http://www.collocations.de/AM) nach und fügen Sie diese der Tabelle hinzu.  Wie gut stimmen die Werte der AMs mit Ihren intuitiven Erwartungen überein?
+
+## Statistische Assoziationsmaße
+
+Komplexere Assoziationsmaße verwenden alle Einträge der Kontingenz- und Indifferentabelle. Viele dieser Maße sind von entsprechenden statistischen Tests abgeleitet, bspw. dem $\chi^2$-Test:
+$$
+\chi^2 = \sum_{ij} \frac{(O_{ij} - E_{ij})^2}{E_{ij}}
+$$
+
+In `R` ist der $\chi^2$-Test (mit Stetigkeitskorrektur: `correct = TRUE`) bereits vorimplementiert:
+```{r}
+chisq.test(A)
+chisq.test(A)$statistic
+```
+
+`R` warnt hier bereits, dass der Test "inkorrekt" sein kann. Für kleine und / oder schiefe Datensätze ist es besser, den exakten Test nach Fisher zu verwenden:
+```{r}
+fisher.test(A)
+```
+
+Hier wird der Wert der Teststatistik nicht direkt ausgegeben. Eine Möglichkeit ist, eine Transformation des p-Wertes als Assoziationsmaß zu verwenden:
+```{r}
+-log10(fisher.test(A)$p.value)
+```
+
+Wieder andere AMs basieren auf den _bedingten_ Wahrscheinlichkeiten $P(w_2 | w_1) \approx O_{11} / R_1$ und $P(w_1 | w_2) \approx O_{11} / C_1$.  Ein Beispiel ist das gerichtete Maß $\Delta P$:
+$$
+\Delta P_{2|1} = \frac{O_{11}}{R_1} - \frac{O_{21}}{R_2}
+$$
+
+> **Q:** Fügen Sie die (unkorrigierten) $\chi^2$-Werte und das gerichtete $\Delta P$ der Tabelle hinzu.
+
+## Ranking
+
+Für eine echte Kollokationsanalyse müssen wir den gesamten Datensatz `BrownBigrams` mit marginalen und erwarteten Häufigkeiten sowie den entsprechenden Werten der AMs versehen:
+
+```{r}
+BB <- transform(BrownBigrams, 
+                R1 = O11 + O12, R2 = O21 + O22,
+                C1 = O11 + O21, C2 = O12 + O22,
+                N = O11 + O12 + O21 + O22)
+BB <- transform(BB,
+                E11 = R1 * C1 / N, E12 = R1 * C2 / N,
+                E21 = R2 * C1 / N, E22 = R2 * C2 / N)
+BB <- transform(BB, 
+                MI = log2(O11 / E11), 
+                t.score = (O11 - E11) / sqrt(O11),
+                X2 = (O11-E11)^2/E11 + (O12-E12)^2/E12 + (O21-E21)^2/E21 + (O22-E22)^2/E22,
+                DP = O11 / R1 - O21 / R2)
+BB2 <- BB[, c(2:6, 15, 19:22)] # we'll just ignore irrelevant columns
+```
+
+Um die am stärksten miteinander assoziierten Wortpaare zu finden, müssen wir den Datensatz `BB2` gemäß einem Assoziationsmaß sortieren.  Die Funktion `order()` kann dafür verwendet werden, einen passenden Index zu erstellen:
+
+```{r}
+idx <- order(BB2$MI, decreasing=TRUE)
+idx10 <- idx[1:10] # top 10 collocates according to MI
+knitr::kable(BB2[idx10, ], digits=2)
+```
+
+> **Q:** Bestimmen Sie jeweils die Top-20 Kollokate für alle Assoziationsmaße in Ihrer Tabelle. Was fällt Ihnen bzgl. dieser Listen auf? Wie würden Sie den Unterschied zwischen den AMs beschreiben?
+
+Mit einer kleinen Hilfsfunktion, welche Datensätze gemäß einer Spalte sortiert, können wir uns das Leben ein bisschen einfacher machen. Die Funktion nimmt zwei Argumente: den zu sortierenden Datensatz und den Namen der Spalte, nach welcher sortiert werden soll. Ein drittes optionales Argument spezifiziert die Anzahl der Elemente, die ausgegeben werden soll:
+
+```{r}
+order.df <- function (x, name, n=Inf) {
+  idx <- order(x[[name]], decreasing=TRUE)
+  head(x[idx, ], n)
+}
+```
+
+> **Q:** Fügen Sie ein viertes Argument hinzu, welches zwischen auf- und absteigender Reihenfolge wählen lässt.
+
+Eine Top-10-Liste bekommt man nun einfach mittels:
+
+```{r}
+knitr::kable(order.df(BB2, "DP", n=10), digits=2)
+```
+
+In der Praxis ist man oft an Kollokationspaaren mit bestimmten Eigenschaften interessiert, bspw. möchte man alle Noun-Noun-Paare betrachten:
+
+```{r}
+NN <- subset(BB2, pos1 == "N" & pos2 == "N")
+knitr::kable(order.df(NN, "X2", n=10), digits=2)
+```
+
+… oder man möchte einen ganz bestimmten Knoten (engl. _node word_) betrachten:
+
+```{r}
+time.x <- subset(BB2, word2 == "time")
+knitr::kable(order.df(time.x, "X2", n=10), digits=2)
+```
+
+Als letztes Beispiel sehen wir uns stark assoziierte Bigramme von aufeinanderfolgenden Bestimmungswörtern (engl. _determiner_) an. Im Penn Treebank Tagset schließen solche Ausdrücke insbesondere Kombinationen wie _such a_ oder _all the_ mit ein:
+
+```{r}
+II <- subset(BB2, pos1 == "D" & pos2 == "D")
+knitr::kable(order.df(II, "X2", n=10), digits=2)
+```
+
+> **Q:** Irgendwelche Überraschungen? Was passiert hier? Interpretieren Sie insbesondere die Einträge für (this, the) und (this, a).
