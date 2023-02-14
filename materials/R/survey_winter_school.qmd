@@ -1,0 +1,151 @@
+---
+title: "Winter school: survey"
+author: "Andreas Blombach"
+lang: de
+format:
+  html:
+    self-contained: true
+    toc: true
+    code-fold: true
+    code-tools: true
+    theme: yeti
+    df-print: paged
+    fig-width: 8
+    fig-height: 5
+---
+
+## Setup
+```{r}
+#| message: false
+#| warning: false
+library(tidyverse)
+library(skimr)
+```
+
+```{r}
+#| message: false
+survey <- read_csv2("D:/survey_winterschool.csv")
+```
+
+```{r}
+survey <- survey |>
+  select(case = CASE,
+         pk_linguistics = PK02_04,
+         pk_corpus_queries = PK02_01,
+         pk_study_design = PK02_05,
+         pk_statistics = PK02_02,
+         pk_programming = PK02_03,
+         nr_wishes = WS01,
+         WS01_01:WS01_10a,
+         comments = WS02_01,
+         TIME_SUM) |>
+  mutate(across(WS01_01:WS01_10, ~ as.logical(.x - 1)))
+```
+
+
+## Number of participants
+```{r}
+nrow(survey)
+```
+
+## Prior knowledge
+```{r}
+survey |>
+  select(pk_linguistics:pk_programming) |>
+  skim()
+```
+
+
+```{r}
+survey |>
+  mutate(pk_linguistics = factor(pk_linguistics, levels = 1:7)) |>
+  ggplot(aes(x = pk_linguistics)) +
+  geom_bar() +
+  scale_x_discrete(drop = FALSE) +
+  labs(x = "Rating",
+       title = "Prior knowledge: linguistics",
+       subtitle = "On a scale from 1 (none) to 7 (expert knowledge)")
+```
+```{r}
+survey |>
+  mutate(pk_corpus_queries = factor(pk_corpus_queries, levels = 1:7)) |>
+  ggplot(aes(x = pk_corpus_queries)) +
+  geom_bar() +
+  scale_x_discrete(drop = FALSE) +
+  labs(x = "Rating",
+       title = "Prior knowledge: corpus queries",
+       subtitle = "On a scale from 1 (none) to 7 (expert knowledge)")
+```
+```{r}
+survey |>
+  mutate(pk_study_design = factor(pk_study_design, levels = 1:7)) |>
+  ggplot(aes(x = pk_study_design)) +
+  geom_bar() +
+  scale_x_discrete(drop = FALSE) +
+  labs(x = "Rating",
+       title = "Prior knowledge: design of empirical studies",
+       subtitle = "On a scale from 1 (none) to 7 (expert knowledge)")
+```
+
+```{r}
+survey |>
+  mutate(pk_statistics = factor(pk_statistics, levels = 1:7)) |>
+  ggplot(aes(x = pk_statistics)) +
+  geom_bar() +
+  scale_x_discrete(drop = FALSE) +
+  labs(x = "Rating",
+       title = "Prior knowledge: statistics",
+       subtitle = "On a scale from 1 (none) to 7 (expert knowledge)")
+```
+
+```{r}
+survey |>
+  mutate(pk_programming = factor(pk_programming, levels = 1:7)) |>
+  ggplot(aes(x = pk_programming)) +
+  geom_bar() +
+  scale_x_discrete(drop = FALSE) +
+  labs(x = "Rating",
+       title = "Prior knowledge: programming (R, Python, ...)",
+       subtitle = "On a scale from 1 (none) to 7 (expert knowledge)")
+```
+
+
+### Wishes
+```{r}
+survey |>
+  summarise(across(WS01_01:WS01_10, ~ sum(.x))) |>
+  pivot_longer(everything(), names_to = "Topic", values_to = "Count") |>
+  mutate(Topic = factor(Topic, labels = c("Corpus design and creation",
+                                          "Automatic annotation",
+                                          "Manual annotation",
+                                          "Corpus queries",
+                                          "Corpus-linguistic analysis techniques",
+                                          "Stylometry",
+                                          "Web scraping",
+                                          "Network analysis",
+                                          "Word embeddings",
+                                          "Something else"))) |>
+  arrange(desc(Count)) |>
+  mutate(Topic = fct_inorder(Topic)) |>
+  ggplot(aes(x = Topic, y = Count)) +
+  geom_col() +
+  theme(axis.text.x = element_text(angle = -45, hjust = 0)) +
+  labs(title = "Topics participants are most interested in",
+       subtitle = "Up to three topics could be selected")
+```
+Answers for "something else":
+```{r}
+survey |>
+  drop_na(WS01_10a) |>
+  pull(WS01_10a)
+```
+
+
+
+### Further comments
+```{r}
+survey |>
+  drop_na(comments) |>
+  pull(comments)
+```
+
