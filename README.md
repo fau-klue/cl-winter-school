@@ -5,8 +5,11 @@
 ### Day 1
 
 - Introduction, overview of the course
+  + [Survey Winter School](materials/survey_winter_school.html)
 - Overview of software tools (to be discussed / mentioned in the course)
-- Installation of R and RStudio for code examples
+- Getting to Known R and RStudio with code examples
+  + [R packages](materials/R/R_packages.md)
+  + [Introduction to R](materials/R/01-basics.html)
 
 
 ### Day 2
@@ -14,21 +17,21 @@
 - Introduction to corpus linguistics
 - Corpus design, representativeness, sampling frame
 - Sources of corpus data, corpus compilation
+- Corpus indexing
 
 
 ### Day 3
 
-- Practicals of corpus creation (e.g. cleaning & preprocessing text)
-- Automatic annotation with various tools
-- Manual annotation, IAA (perhaps too much on this day?)
+- Software tools for corpus analysis
+- Corpus queries
+- Reading concordances
 
 
 ### Day 4
 
-- Corpus indexing
-- Software tools for corpus analysis
-- Corpus queries
-- Reading concordances
+- Practicals of corpus creation (e.g. cleaning & preprocessing text)
+- Automatic annotation with various tools (NLP pipelines)
+- Manual annotation, IAA (perhaps too much on this day?)
 
 
 ### Day 5
