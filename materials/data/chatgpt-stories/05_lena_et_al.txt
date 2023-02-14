@@ -1,0 +1,21 @@
+Lena, a PhD student in computational linguistics, Wei, a PhD student in physics, and Ming, a PhD student in medicine, are at a coffee shop in a university campus. Lena is speaking in English, Wei is speaking in German, and Ming is speaking in Chinese.
+
+Lena: "This research is so challenging, it seems like every time I make progress, there's a new obstacle I need to overcome."
+
+Wei: "Ich verstehe. In der Physik ist es auch so. Manchmal fühlt es sich an, als ob wir uns immer weiter in die Tiefe graben, aber das Ziel noch immer in weiter Ferne liegt." (Translation: "I understand. It's the same in physics. Sometimes it feels like we're digging deeper and deeper, but the goal is still far away.")
+
+Ming: (in Chinese) "我也有类似的问题。医学研究非常复杂，需要大量的实验和数据分析。有时候似乎没有进展，但是我们必须坚持不懈地努力。" (Translation: "I have similar problems too. Medical research is very complex, requiring a lot of experiments and data analysis. Sometimes it seems like there's no progress, but we have to keep pushing through.")
+
+Lena: "Yeah, it's tough. But it helps to know that we're not alone in our struggles. It's comforting to have friends in other disciplines who understand what we're going through."
+
+Wei: "Ja, das stimmt. Wir können voneinander lernen und uns gegenseitig motivieren, weiterzumachen." (Translation: "Yes, that's true. We can learn from each other and motivate each other to keep going.")
+
+Ming: (in Chinese) "我同意。我们可以共同探索不同的方法和技术，来解决我们的难题。" (Translation: "I agree. We can explore different methods and technologies together to solve our problems.")
+
+Lena: "That's a great idea. Maybe we could even collaborate on a project that combines our fields."
+
+Wei: "Ja, das klingt gut. Wir könnten neue Erkenntnisse gewinnen und die Welt ein Stückchen besser machen." (Translation: "Yes, that sounds good. We could gain new insights and make the world a little bit better.")
+
+Ming: (in Chinese) "我们需要一起努力，才能实现我们的梦想。" (Translation: "We need to work together to achieve our dreams.")
+
+The three of them smiled and raised their coffee cups in a toast to their shared struggles and their potential for collaboration.
