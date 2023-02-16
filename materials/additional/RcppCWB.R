@@ -1,0 +1,5 @@
+Sys.setenv(CORPUS_REGISTRY = "/home/ausgerechnet/corpora/cwb/registry/")
+install.packages("RcppCWB")
+library(RcppCWB)
+library(tidyverse)
+library(polmineR)
