@@ -21,10 +21,8 @@
 
 ### Day 3
 
-- [Corpus queries](materials/day03_representation_indexing_query.pdf)
-  + Corpus indexing
-- Corpus analysis
-  + Worked example: [TTA](materials/day03_tta_script.md)
+- [Corpus indexing, queries, analysis](materials/day03_representation_indexing_query.pdf)
+- Worked example: the [Trump Twitter Archive](materials/day03_tta_script.md) on CQPweb
 
 
 ### Day 4
