@@ -23,21 +23,24 @@
 
 - [Corpus queries](materials/day03_representation_indexing_query.pdf)
   + Corpus indexing
-- Corpus Analysis:
-  + [TTA](materials/day03_tta_script.md)
+- Corpus analysis
+  + Worked example: [TTA](materials/day03_tta_script.md)
 
 
 ### Day 4
 
-- [Regular Expressions](materials/days04_regular_expressions.pdf)
+- [Regular Expressions](materials/day04_regular_expressions.pdf)
 
 
 ### Day 5
 
-- Practicals of corpus creation (e.g. cleaning & preprocessing text)
-- Automatic annotation with various tools (NLP pipelines)
-- Manual annotation, IAA (perhaps too much on this day?)
+- Practicals of corpus creation
+  + cleaning & preprocessing text
+  + [automatic annotation](materials/day05_linguistic_annotation.pdf) 
+  + [NLP pipelines](materials/day05_annotate_trankit.py)
 - Quantitative techniques of corpus linguistics
-- Basis: frequency comparison
-- Collocations, Keywords, ...
-- Pointers to statistics course in summer term
+  + Basis: frequency comparison
+  + Collocations, Keywords, ...
+  + Pointers to statistics course in summer term
+- Manual annotation, IAA (probably too much)
+- Network analysis (probably too much)
