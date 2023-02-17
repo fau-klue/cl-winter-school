@@ -27,18 +27,17 @@
 
 ### Day 4
 
+- [Querying corpora for constructions](materials/day04_queries.txt)
 - [Regular Expressions](materials/day04_regular_expressions.pdf)
+- Automatic NLP pipelines ([trankit](materials/day04_annotate_trankit.py))
 
 
 ### Day 5
 
 - Practicals of corpus creation
-  + cleaning & preprocessing text
-  + [automatic annotation](materials/day05_linguistic_annotation.pdf) 
-  + [NLP pipelines](materials/day05_annotate_trankit.py)
+  + [manual and automatic annotation](materials/day05_linguistic_annotation.pdf) 
+  + [cleaning & preprocessing text](materials/day05_working_with_text_data.html)
 - Quantitative techniques of corpus linguistics
   + Basis: frequency comparison
-  + Collocations, Keywords, ...
+  + Collocations, [Keywords](day05_keywords.html), ...
   + Pointers to statistics course in summer term
-- Manual annotation, IAA (probably too much)
-- Network analysis (probably too much)
