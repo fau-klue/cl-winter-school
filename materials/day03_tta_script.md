@@ -21,7 +21,7 @@
   - results are still very general high-frequency words and often not particularly characteristic
 
 - **step 3:** keyword analysis = frequency comparison against reference corpus (➞ English tweets)
-  - use default settings, but positive keywords only (too many negative ones!)
+  - use default settings, but change keyness measure to _Log-Likelihood_ (or _Log Ratio (conservative estimate)_) and show positive keywords only (too many negative ones!)
   - compare tabular view with visualisation options, click on _thank_ to display concordance
   - focus on salient _fake_ and very frequent _great_
 
