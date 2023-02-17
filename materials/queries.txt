@@ -1,0 +1,64 @@
+„[T]here is a special case of drive which only occurs in the resultative construction. This sense of drive constrains the result-goal argument to mean ‘crazy’[.]“ (Goldberg 1995:79)
+
+(1) Chris drove Pat mad/bonkers/bananas/crazy/over the edge.
+(2) *Chris drove Pat silly/dead/angry/happy/sick.
+
+First query (using an English Twitter corpus like this one: https://corpora.linguistik.uni-erlangen.de/cqpweb/corona_en/)
+[lemma="drive"] [word="me|him|her|you|them|us"] a:[pos="[AN]"] within tweet show a .. matchend
+
+Frequency breakdown shows mostly expected results. But there are also a few sentences that, according to Goldberg, shouldn't be possible:
+
+(3) Covid undoubtedly struck some people hard and drove them dead.
+(4) This covid bs is driving me broke. 
+
+In a footnote, Goldberg acknowledges that other resultatives such as *to suicide* or *to drink* are also possible.
+
+„These cases indicate that ‘crazy’ is perhaps too narrow, and that the meaning of the result-goal argument is better described as ‘to a state where normal mental processing is not possible’.“ (Goldberg 1995:234)
+
+So, let's have a look at constructions including *to*:
+[lemma="drive"] [word="me|him|her|you|them|us"] [word="to"] a:[] within tweet show a .. matchend
+
+(5) It drives me to anxiety. 
+(6) The body aches and headaches drove me to tears.
+(7) The system felt like the freaking Hunger Games, it was driving me to anger and despair.
+(8) Clearly something drove her to act in this irresponsible way [...]
+(9) I got it. Fear. Drives us to do weird shit.
+(10) So beholden are they to ideology that is drives them to repeatedly make the wrong decision.
+(11) If this is the kind of thing your fandom drives you to say, you should absolutely find a new hobby.
+(12) Is it fear of Covid that has driven them to a tropical vacation?
+(13) What on earth drives you to think this?
+(14) Capitalism has driven us to value the individual more than the collective [...]
+(15) COVID-19 isn't just driving us to stay indoors longer [...]
+(16) Many workers say a year of remote work drove them to improve their digital skills [...]
+(17) Surely his godly compassion would have driven him to work extra work for Americans?
+
+And how about *into*?
+[lemma="drive"] [word="me|him|her|you|them|us"] [word="into"] a:[] within tweet show a .. matchend
+
+(18) They also drive you into instability.
+(19) [...] driving them into financial ruin [...]
+(20) [They] could seize your assets or they can drive you into bankruptcy.
+(21) How did we have the “strongest economy of all time” but just a few months later, @realDonaldTrump‘s Coronavirus policies have driven us into a Depression?
+(22) Biden has not proposed any of this, but trump has driven us into a depression with his Covid failure.
+(23) Morrison was already driving us into a recession [...]
+(24) At the same time, COVID-19 drove us into the digital in unprecedented ways [...]
+(25) Hancock is fiddling the figures to drive us into lockdown and no one in UK news media is questioning why?
+(26) I can only watch so many episodes of Star Trek before I have to talk about it with *s o m e o n e * why not let it be hoards of strangers who articulate all of my opinions better than I can, driving me into obsoletion
+(27) [I]t's a cyclical, seasonal virus with manipulated data compiling all flu, pneumonia, and covid symptoms lumped together in an effort to fear drive you into submission.
+
+
+Some example queries for German (use a large Web or newspaper corpus):
+*X macht mich Y* ('X makes me Y'):
+[lemma="machen"] [word="mich|dich|sie|ihn|euch|uns|einen"] a:[pos="ADJD"] within s show a .. matchend
+
+*um X' willen* ('for X' sake'):
+[word="um" %c] []{1,3} [word="willen"] within s
+
+Reduplication with preposition, e.g. *Auge um Auge* ('an eye for an eye'), *Zug um Zug*:
+a:[pos="NN"] [pos="APPR"] b:[] :: a.word = b.word within s
+This should also work:
+a:[pos="NN"] [pos="APPR"] [word = a.word] within s
+
+Dativus possessivus, e.g. *meinem Vater sein Bruder*:
+[word="meinem|deinem|seinem|ihrem|dem"] [pos="NN"] [word="sein" & pos="PPOSAT"] within s
+=> Still many false positives
